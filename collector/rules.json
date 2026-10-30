@@ -1,0 +1,398 @@
+{
+  "_comment": "Default alert catalogue. Edit, commit to Git, and the collector hot-reloads this file (no restart). Types: event_count | metric_threshold | heartbeat_missing | new_error. 'levels' lets one rule escalate warning -> critical in place. Tune every threshold to your own baseline before go-live.",
+  "rules": [
+    {
+      "id": "WM-001",
+      "name": "Server not reporting",
+      "type": "heartbeat_missing",
+      "severity": "critical",
+      "max_silence_s": 120,
+      "resolve_after_s": 30,
+      "scope": {
+        "environment": [
+          "PROD",
+          "UAT"
+        ]
+      },
+      "escalate_after_s": 900,
+      "description": "The agent has missed its heartbeats: host down, agent stopped, or network path to the collector broken.",
+      "runbook": "https://wiki.example.com/webmethods/runbooks/server-not-reporting"
+    },
+    {
+      "id": "WM-002",
+      "name": "Error burst",
+      "type": "event_count",
+      "match": {
+        "min_level": "ERROR"
+      },
+      "window_s": 300,
+      "group_by": "server",
+      "levels": [
+        {
+          "severity": "warning",
+          "threshold": 25
+        },
+        {
+          "severity": "critical",
+          "threshold": 100
+        }
+      ],
+      "resolve_after_s": 300,
+      "repeat_s": 3600,
+      "title": "{count} errors in {window_min} min on {server}",
+      "description": "Volume of ERROR/FATAL events per server in a 5-minute window.",
+      "runbook": "https://wiki.example.com/webmethods/runbooks/error-burst"
+    },
+    {
+      "id": "WM-003",
+      "name": "Fatal event",
+      "type": "event_count",
+      "match": {
+        "min_level": "FATAL",
+        "exclude_message": "(?i)access denied"
+      },
+      "window_s": 120,
+      "group_by": "server+fp",
+      "threshold": 1,
+      "severity": "critical",
+      "resolve_after_s": 600,
+      "title": "FATAL on {server}: {sample}",
+      "description": "Any event logged at the highest severity (Integration Server level C). Access-denied lines are logged at this level too, so they are excluded here and handled by WM-006."
+    },
+    {
+      "id": "WM-004",
+      "name": "JVM out of memory",
+      "type": "event_count",
+      "match": {
+        "message": "OutOfMemoryError|Java heap space|GC overhead limit exceeded|unable to create (new )?native thread"
+      },
+      "window_s": 300,
+      "group_by": "server",
+      "threshold": 1,
+      "severity": "critical",
+      "resolve_after_s": 900,
+      "title": "JVM memory exhaustion on {server}",
+      "description": "Heap or thread exhaustion. Usually needs a restart and a heap/thread dump.",
+      "runbook": "https://wiki.example.com/webmethods/runbooks/jvm-oom"
+    },
+    {
+      "id": "WM-005",
+      "name": "Database connectivity",
+      "type": "event_count",
+      "match": {
+        "min_level": "WARN",
+        "message": "(?i)(connection refused|unable to (obtain|get|acquire) .{0,40}connection|ORA-0?(12541|12514|01017)|SQLTransientConnectionException|pool exhausted|communications link failure)"
+      },
+      "window_s": 300,
+      "group_by": "server",
+      "levels": [
+        {
+          "severity": "warning",
+          "threshold": 5
+        },
+        {
+          "severity": "critical",
+          "threshold": 20
+        }
+      ],
+      "title": "Database/JDBC connection problems on {server} ({count} in {window_min} min)",
+      "description": "Connection refused, pool exhaustion or login failures against a JDBC resource."
+    },
+    {
+      "id": "WM-006",
+      "name": "Authentication failures",
+      "type": "event_count",
+      "match": {
+        "message": "(?i)(access denied|authentication failed|invalid credentials|login failed)"
+      },
+      "window_s": 300,
+      "group_by": "fleet",
+      "threshold": 20,
+      "severity": "warning",
+      "resolve_after_s": 600,
+      "title": "{count} authentication failures across the fleet in {window_min} min",
+      "description": "Possible credential stuffing, a misconfigured client, or an expired service password."
+    },
+    {
+      "id": "WM-007",
+      "name": "New error pattern",
+      "type": "new_error",
+      "match": {
+        "min_level": "ERROR"
+      },
+      "window_s": 900,
+      "severity": "info",
+      "resolve_after_s": 60,
+      "scope": {
+        "environment": [
+          "PROD"
+        ]
+      },
+      "description": "An error whose fingerprint has never been seen anywhere in the fleet. Typical after a deployment."
+    },
+    {
+      "id": "WM-008",
+      "name": "Disk space",
+      "type": "metric_threshold",
+      "metric": "disk_used_pct:*",
+      "op": ">=",
+      "ignore_below": 0,
+      "levels": [
+        {
+          "severity": "warning",
+          "value": 75
+        },
+        {
+          "severity": "critical",
+          "value": 90
+        }
+      ],
+      "resolve_after_s": 120,
+      "title": "Disk {label} at {value}% on {server}",
+      "description": "Used space on a monitored file system other than /opt* (the /var* volumes, the NAS mounts /wMNfs and /wMShared, anything else in the agent's disk_mounts / disk_paths). Healthy is under 75%; 90% and above is critical. A NAS share listed under shared_storage in the server list alerts once, not once per server. /opt* has per-landscape limits in WM-019..WM-021.",
+      "runbook": "https://wiki.example.com/webmethods/runbooks/disk-space",
+      "exclude_metric": "disk_used_pct:/opt*"
+    },
+    {
+      "id": "WM-018",
+      "name": "Mount point missing",
+      "type": "metric_threshold",
+      "metric": "mount_present:*",
+      "op": "==",
+      "value": 0,
+      "severity": "critical",
+      "resolve_after_s": 60,
+      "title": "Mount point {label} is not mounted on {server}",
+      "description": "A monitored file system (agent disk_mounts) is not in the host's mount table: an NFS share (/wMNfs, /wMShared) that did not mount or dropped, or a local volume that is missing. Integration Server writes into these paths, so expect failures until it is mounted again.",
+      "runbook": "https://wiki.example.com/webmethods/runbooks/mount-missing"
+    },
+    {
+      "id": "WM-019",
+      "name": "Disk space /opt (Dev)",
+      "metric": "disk_used_pct:/opt*",
+      "type": "metric_threshold",
+      "op": ">=",
+      "ignore_below": 0,
+      "resolve_after_s": 120,
+      "title": "Disk {label} at {value}% on {server}",
+      "runbook": "https://wiki.example.com/webmethods/runbooks/disk-space",
+      "levels": [
+        {
+          "severity": "warning",
+          "value": 90
+        },
+        {
+          "severity": "critical",
+          "value": 95
+        }
+      ],
+      "scope": {
+        "environment": [
+          "Dev",
+          "CN1",
+          "DEV",
+          "CON"
+        ]
+      },
+      "description": "Used space on the /opt* file systems of Dev (CON and CN1) servers. Healthy is under 90%; 95% and above is critical. Scope matches the landscape in the server list or the environment the agent reports."
+    },
+    {
+      "id": "WM-020",
+      "name": "Disk space /opt (UAT)",
+      "metric": "disk_used_pct:/opt*",
+      "type": "metric_threshold",
+      "op": ">=",
+      "ignore_below": 0,
+      "resolve_after_s": 120,
+      "title": "Disk {label} at {value}% on {server}",
+      "runbook": "https://wiki.example.com/webmethods/runbooks/disk-space",
+      "levels": [
+        {
+          "severity": "warning",
+          "value": 85
+        },
+        {
+          "severity": "critical",
+          "value": 95
+        }
+      ],
+      "scope": {
+        "environment": [
+          "Test",
+          "PSS",
+          "UAT",
+          "TST"
+        ]
+      },
+      "description": "Used space on the /opt* file systems of UAT (Test and PSS) servers. Healthy is under 85%; 95% and above is critical. Scope matches the landscape in the server list or the environment the agent reports."
+    },
+    {
+      "id": "WM-021",
+      "name": "Disk space /opt (Prod, DR and others)",
+      "metric": "disk_used_pct:/opt*",
+      "type": "metric_threshold",
+      "op": ">=",
+      "ignore_below": 0,
+      "resolve_after_s": 120,
+      "title": "Disk {label} at {value}% on {server}",
+      "runbook": "https://wiki.example.com/webmethods/runbooks/disk-space",
+      "levels": [
+        {
+          "severity": "warning",
+          "value": 75
+        },
+        {
+          "severity": "critical",
+          "value": 90
+        }
+      ],
+      "scope": {
+        "not_environment": [
+          "Dev",
+          "CN1",
+          "DEV",
+          "CON",
+          "Test",
+          "PSS",
+          "UAT",
+          "TST"
+        ]
+      },
+      "description": "Used space on the /opt* file systems of PROD and DR servers. Healthy is under 75%; 90% and above is critical. Applies to every landscape not covered by WM-019 / WM-020 (so a new landscape gets the strictest limit). Scope matches the landscape in the server list or the environment the agent reports."
+    },
+    {
+      "id": "WM-009",
+      "name": "Health probe failing",
+      "type": "metric_threshold",
+      "metric": "probe_ok:*",
+      "op": "==",
+      "value": 0,
+      "for_s": 60,
+      "severity": "critical",
+      "resolve_after_s": 60,
+      "title": "Probe \"{label}\" failing on {server}",
+      "description": "The agent's local HTTP/TCP probe (for example Integration Server ping) is failing while the host is alive."
+    },
+    {
+      "id": "WM-010",
+      "name": "Probe slow",
+      "type": "metric_threshold",
+      "metric": "probe_ms:*",
+      "op": ">",
+      "for_s": 300,
+      "levels": [
+        {
+          "severity": "warning",
+          "value": 2000
+        }
+      ],
+      "title": "Probe \"{label}\" slow on {server}: {value} ms",
+      "description": "Response time of the local probe has stayed above 2 s for five minutes."
+    },
+    {
+      "id": "WM-011",
+      "name": "Log file silent",
+      "type": "metric_threshold",
+      "metric": "log_age_s:server.log",
+      "op": ">",
+      "value": 1800,
+      "severity": "warning",
+      "resolve_after_s": 120,
+      "scope": {
+        "environment": [
+          "PROD"
+        ]
+      },
+      "title": "{label} has not been written for {value} s on {server}",
+      "description": "No new lines in server.log for 30 minutes. Tune or scope this for quiet environments."
+    },
+    {
+      "id": "WM-012",
+      "name": "High CPU load",
+      "type": "metric_threshold",
+      "metric": "load_per_cpu",
+      "op": ">",
+      "for_s": 300,
+      "levels": [
+        {
+          "severity": "warning",
+          "value": 2.0
+        },
+        {
+          "severity": "critical",
+          "value": 4.0
+        }
+      ],
+      "title": "Load per CPU {value} on {server}",
+      "description": "1-minute load average divided by CPU count, sustained for five minutes."
+    },
+    {
+      "id": "WM-013",
+      "name": "Host memory",
+      "type": "metric_threshold",
+      "metric": "mem_used_pct",
+      "op": ">",
+      "for_s": 300,
+      "levels": [
+        {
+          "severity": "warning",
+          "value": 90
+        },
+        {
+          "severity": "critical",
+          "value": 97
+        }
+      ],
+      "title": "Host memory at {value}% on {server}",
+      "description": "Operating-system memory in use, sustained for five minutes."
+    },
+    {
+      "id": "WM-014",
+      "name": "Agent delivery backlog",
+      "type": "metric_threshold",
+      "metric": "agent_spool_files",
+      "op": ">",
+      "value": 20,
+      "severity": "warning",
+      "resolve_after_s": 120,
+      "title": "Agent on {server} has {value} undelivered batches",
+      "description": "The agent is reachable but is not draining its local spool fast enough."
+    },
+    {
+      "id": "WM-015",
+      "name": "Agent dropped events",
+      "type": "metric_threshold",
+      "metric": "agent_events_dropped",
+      "op": ">",
+      "value": 0,
+      "severity": "warning",
+      "resolve_after_s": 300,
+      "title": "Agent on {server} dropped {value} events (spool cap reached)",
+      "description": "The local spool hit its size cap during an outage and the oldest events were discarded."
+    },
+    {
+      "id": "WM-016",
+      "name": "Clock skew",
+      "type": "metric_threshold",
+      "metric": "agent_clock_skew_s",
+      "op": "abs>",
+      "value": 120,
+      "for_s": 120,
+      "severity": "warning",
+      "title": "Clock on {server} differs from the collector by {value} s",
+      "description": "Timestamps from this host are unreliable until NTP is fixed."
+    },
+    {
+      "id": "WM-017",
+      "name": "Agent quarantined batches",
+      "type": "metric_threshold",
+      "metric": "agent_batches_rejected",
+      "op": ">",
+      "value": 0,
+      "severity": "warning",
+      "resolve_after_s": 300,
+      "title": "Agent on {server} has {value} rejected batch(es) in its quarantine folder",
+      "description": "The collector refused these batches as malformed or too large (HTTP 400/413/415/422). Their events are not stored. Inspect <spool_dir>/rejected on the host, then remove the files to clear the alert."
+    }
+  ]
+}

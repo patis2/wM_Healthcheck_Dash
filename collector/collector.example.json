@@ -1,0 +1,42 @@
+{
+  "_comment": "Example only - never put real credentials here. Copy to collector.json, then: --new-agent-token <server-name> for each host, --hash-password for each dashboard user, --check-config and --check-rules. Notifications stay in dry_run until you have tested routes against a test mailbox and Teams channel; then set dry_run to false. SMTP password and Teams webhook URLs come from environment variables.",
+  "listen": {"host": "0.0.0.0", "port": 8443},
+  "tls": {"cert": "/etc/wm-hub/tls/server.crt", "key": "/etc/wm-hub/tls/server.key", "client_ca": null},
+  "db_path": "./data/hub.db",
+  "rules_file": "./rules.json",
+  "retention_days": {"events": 14, "metrics": 7, "alerts": 180},
+  "expected_heartbeat_s": 30,
+  "eval_interval_s": 15,
+  "sqlite_synchronous": "NORMAL",
+
+  "agents": [
+    {"name": "IS-PRD-01", "token_sha256": "<output of --new-agent-token>", "servers": ["IS-PRD-01"]},
+    {"name": "all-uat",   "token_sha256": "<output of --new-agent-token>", "servers": ["*-UAT-*"]}
+  ],
+
+  "ui_auth": {
+    "mode": "basic",
+    "users": {"admin": "<output of --hash-password>"}
+  },
+
+  "notifications": {
+    "dry_run": true,
+    "outbox_dir": "./data/outbox",
+    "dashboard_url": "https://wm-hub.example.com",
+    "email": {
+      "enabled": true,
+      "smtp_host": "smtp.office365.com", "smtp_port": 587, "security": "starttls",
+      "username": "wm-hub@example.com", "password_env": "WM_HUB_SMTP_PASSWORD",
+      "from": "webMethods Hub <wm-hub@example.com>"
+    },
+    "teams": {"enabled": true},
+    "routes": [
+      {"match": {"environment": ["PROD"], "severity": ["critical"]},
+       "email": ["wm-oncall@example.com"], "teams": ["WM_HUB_TEAMS_PROD"]},
+      {"match": {"environment": ["PROD"], "severity": ["warning", "info"]},
+       "email": ["wm-ops@example.com"], "teams": ["WM_HUB_TEAMS_PROD"]},
+      {"match": {"environment": ["UAT", "DEV"]},
+       "email": ["wm-dev@example.com"], "teams": ["WM_HUB_TEAMS_NONPROD"]}
+    ]
+  }
+}

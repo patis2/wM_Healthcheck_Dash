@@ -1,0 +1,21 @@
+[Unit]
+Description=webMethods Hub collector
+After=network-online.target
+
+[Service]
+User=wmhub
+Group=wmhub
+WorkingDirectory=/opt/wm-hub
+# Secrets (SMTP password, Teams webhook URLs) live here, one KEY=value per line, chmod 600
+EnvironmentFile=/etc/wm-hub/secrets.env
+ExecStart=/usr/bin/python3 /opt/wm-hub/run_collector.py --config /etc/wm-hub/collector.json
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/wm-hub
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+demo_runs/
+data/
+# runtime state: databases, spool and agent state
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+spool/
+*.spool
+state/
+# real configs and server lists (only *.example.json belong in git)
+agent/agent.json
+collector/collector.json
+collector/inventory.json
+*.xlsx
+*.xlsm
+*.csv
+*.env
+# real server inventory kept on this PC only
+*.local.json

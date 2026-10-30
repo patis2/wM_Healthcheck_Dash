@@ -1,0 +1,47 @@
+{
+  "_comment": "Copy to agent.json. Paths are the typical Software AG layout - confirm each one on the actual host, then run: python wm_agent.py --config agent.json --check. Put the token in the WM_AGENT_TOKEN environment variable, not in this file.",
+
+  "server_name": "IS-PRD-01",
+  "environment": "PROD",
+  "tags": {"product": "integration-server", "instance": "default", "site": "fra1"},
+
+  "collector_url": "https://wm-hub.example.com:8443",
+  "ca_file": null,
+  "verify_tls": true,
+  "client_cert": null,
+  "client_key": null,
+  "proxy": null,
+
+  "sources": [
+    {"name": "server.log",   "path": "/opt/softwareag/IntegrationServer/instances/default/logs/server.log",   "profile": "is_server"},
+    {"name": "error.log",    "path": "/opt/softwareag/IntegrationServer/instances/default/logs/error.log",    "profile": "is_server"},
+    {"name": "wrapper.log",  "path": "/opt/softwareag/profiles/IS_default/logs/wrapper.log",                  "profile": "wrapper"},
+    {"name": "sag-osgi.log", "path": "/opt/softwareag/profiles/IS_default/logs/sag-osgi.log",                 "profile": "generic"}
+  ],
+
+  "probes": [
+    {"name": "is-ping", "url": "http://localhost:5555/invoke/wm.server/ping", "expect_status": 200, "timeout_s": 5,
+     "user_env": "WM_PROBE_USER", "password_env": "WM_PROBE_PASSWORD"}
+  ],
+  "disk_paths": [],
+  "disk_mounts": ["/opt*", "/var*", "/wMNfs", "/wMShared"],
+  "extra_metrics_file": null,
+
+  "first_run": "end",
+  "default_tz": "local",
+  "tz_abbrev": {"IST": 330},
+  "poll_interval_s": 1.0,
+  "flush_interval_s": 5.0,
+  "heartbeat_interval_s": 30.0,
+  "batch_max_events": 500,
+  "spool_dir": "/var/lib/wm-agent/spool",
+  "spool_max_mb": 200,
+  "state_file": "/var/lib/wm-agent/state.json",
+  "log_file": "/var/log/wm-agent/agent.log",
+
+  "redact_defaults": true,
+  "mask_card_numbers": true,
+  "redact": [
+    {"pattern": "(?i)(iban\\s*[:=]\\s*)[A-Z]{2}\\d{2}[A-Z0-9]{10,30}", "replace": "\\1[REDACTED-IBAN]"}
+  ]
+}

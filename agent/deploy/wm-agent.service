@@ -1,0 +1,24 @@
+[Unit]
+Description=webMethods Hub log agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=wmagent
+Group=wmagent
+# /etc/wm-agent/agent.env contains one line:  WM_AGENT_TOKEN=wmh_...   (chmod 600, owner root)
+EnvironmentFile=/etc/wm-agent/agent.env
+ExecStart=/usr/bin/python3 /opt/wm-agent/wm_agent.py --config /etc/wm-agent/agent.json
+Restart=always
+RestartSec=5
+# Needs read access to the Software AG logs and write access to its own spool/state only.
+# Add the agent user to the group that owns the logs (or grant read via ACL); never run it as the webMethods user.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/opt/softwareag
+ReadWritePaths=/var/lib/wm-agent /var/log/wm-agent
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>webMethods health check</title>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --ring:rgba(11,11,11,.10); --hover:rgba(11,11,11,.04);
+  --s1:#2a78d6; --s1-wash:rgba(42,120,214,.10);
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b; --good-text:#006300;
+  --track:#cde2fb;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10); --hover:rgba(255,255,255,.05);
+    --s1:#3987e5; --s1-wash:rgba(57,135,229,.12); --good-text:#0ca30c; --track:#184f95;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10); --hover:rgba(255,255,255,.05);
+  --s1:#3987e5; --s1-wash:rgba(57,135,229,.12); --good-text:#0ca30c; --track:#184f95;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+a{color:inherit}
+button,input,select{font:inherit;color:inherit}
+header.top{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--grid)}
+.bar{max-width:1440px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{font-weight:600;font-size:15px;letter-spacing:.1px;white-space:nowrap}
+.brand small{color:var(--muted);font-weight:400;margin-left:6px}
+nav{display:flex;gap:2px;flex-wrap:wrap}
+nav a{padding:6px 11px;border-radius:6px;text-decoration:none;color:var(--ink2)}
+nav a:hover{background:var(--hover)}
+nav a[aria-current="page"]{color:var(--ink);background:var(--hover);font-weight:600}
+nav .count{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;border-radius:9px;background:var(--crit);color:#fff;font-size:11px;line-height:18px;text-align:center}
+.spacer{flex:1}
+.filters{max-width:1440px;margin:0 auto;padding:8px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;color:var(--ink2)}
+.filters label{display:inline-flex;gap:6px;align-items:center}
+select,input[type=text],input[type=number]{background:var(--surface);border:1px solid var(--axis);border-radius:6px;padding:5px 8px;min-height:30px}
+select:focus,input:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--s1);outline-offset:1px}
+.btn{background:var(--surface);border:1px solid var(--axis);border-radius:6px;padding:5px 11px;cursor:pointer;min-height:30px}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--s1);border-color:var(--s1);color:#fff}
+.btn.small{padding:2px 8px;min-height:24px;font-size:12.5px}
+.btn.danger{border-color:var(--crit)}
+main{max-width:1440px;margin:0 auto;padding:8px 16px 48px}
+h1{font-size:19px;margin:10px 0 2px;font-weight:600}
+h2{font-size:14px;margin:0;font-weight:600}
+.sub{color:var(--muted);font-size:12.5px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:12px 0}
+.tile,.card{background:var(--surface);border:1px solid var(--ring);border-radius:10px}
+.tile{padding:12px 14px}
+.tile .lbl{color:var(--ink2);font-size:12.5px}
+.tile .val{font-size:30px;font-weight:600;line-height:1.15;margin-top:2px}
+.tile .val small{font-size:15px;font-weight:400;color:var(--muted)}
+.tile .note{color:var(--muted);font-size:12.5px;margin-top:2px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+.c12{grid-column:span 12}.c8{grid-column:span 8}.c7{grid-column:span 7}.c6{grid-column:span 6}.c5{grid-column:span 5}.c4{grid-column:span 4}
+@media (max-width:1000px){.c8,.c7,.c6,.c5,.c4{grid-column:span 12}}
+.card{padding:14px 16px;min-width:0}
+.card header{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.card header .sub{margin-left:auto}
+.scroll{overflow-x:auto}
+table.t{width:100%;border-collapse:collapse;font-size:13.5px}
+table.t th{color:var(--muted);font-weight:500;font-size:12px;text-align:left;padding:6px 10px;border-bottom:1px solid var(--grid);white-space:nowrap}
+table.t td{padding:7px 10px;border-bottom:1px solid var(--grid);vertical-align:top}
+table.t tr:last-child td{border-bottom:0}
+table.t tr.row:hover td{background:var(--hover)}
+table.t tr.click{cursor:pointer}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}.ink2{color:var(--ink2)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+.chip{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.ic{width:14px;height:14px;flex:none}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:0 7px;border-radius:9px;border:1px solid var(--axis);font-size:12px;line-height:18px;color:var(--ink2)}
+.empty{padding:28px 8px;text-align:center;color:var(--muted)}
+.meter{display:inline-block;width:54px;height:6px;border-radius:3px;background:var(--track);vertical-align:middle;margin-right:7px;overflow:hidden;opacity:.9}
+.meter i{display:block;height:100%;border-radius:3px;background:var(--s1)}
+.meter i.w{background:var(--warn)}.meter i.c{background:var(--crit)}
+.legend{display:flex;gap:14px;color:var(--ink2);font-size:12.5px;margin:0 0 4px}
+.legend .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+svg.chart{width:100%;height:auto;display:block}
+svg.chart text{fill:var(--muted);font-size:11px;font-family:inherit}
+.hit{fill:transparent}
+.pt .xh,.pt .dot{opacity:0;pointer-events:none}
+.pt:hover .xh,.pt:hover .dot{opacity:1}
+#tip{position:fixed;z-index:20;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--axis);border-radius:8px;padding:6px 9px;font-size:12.5px;box-shadow:0 2px 8px rgba(0,0,0,.18);display:none;max-width:280px}
+.spark-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.spark{border:1px solid var(--ring);border-radius:8px;padding:10px 12px;background:var(--surface)}
+.spark .v{font-size:22px;font-weight:600}
+.spark .l{color:var(--ink2);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:3px 14px;font-size:13.5px}
+.kv dt{color:var(--muted)}.kv dd{margin:0;word-break:break-word}
+pre.detail{margin:6px 0 0;padding:8px 10px;background:var(--bg);border:1px solid var(--grid);border-radius:6px;white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:300px;overflow:auto}
+.banner{border:1px solid var(--axis);border-left:4px solid var(--warn);border-radius:6px;padding:8px 12px;margin:10px 0;background:var(--surface)}
+.banner.bad{border-left-color:var(--crit)}
+.tabs{display:flex;gap:4px;margin:10px 0}
+.tabs a{padding:5px 12px;border-radius:14px;border:1px solid var(--axis);text-decoration:none;color:var(--ink2)}
+.tabs a[aria-current="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.crumb{margin:12px 0 0;font-size:13px}
+.crumb a{color:var(--ink2)}
+details.tv{margin-top:8px}
+details.tv summary{cursor:pointer;color:var(--ink2);font-size:12.5px}
+.row-detail td{background:var(--bg)}
+@media (prefers-reduced-motion:no-preference){.fade{transition:opacity .15s}}
+.controls{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:10px 0 2px;color:var(--ink2)}
+.controls label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.controls a.btn{text-decoration:none}
+h2.sec{font-size:15px;margin:22px 0 8px}
+.ls-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:12px}
+.ls{padding:12px 14px}
+.ls>header{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.ls>header h3{font-size:15px;margin:0;font-weight:600}
+.ls>header .sub{margin-left:auto}
+.ls .unlisted{font-weight:400;color:var(--muted);font-size:12px}
+.cl{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:4px 10px;padding:6px 0;border-top:1px solid var(--grid);align-items:start}
+.cl .cn{font-size:13px;display:flex;gap:2px 6px;align-items:flex-start;flex-wrap:wrap;min-width:0}
+.cl .cn span.name{overflow-wrap:anywhere;min-width:0;flex:1}
+.cl .cn small{color:var(--muted);white-space:nowrap;flex-basis:100%;padding-left:20px}
+.nodes{display:flex;flex-wrap:wrap;gap:4px}
+.node{display:inline-flex;align-items:center;gap:4px;padding:1px 7px 1px 4px;border:1px solid var(--ring);border-radius:10px;font-size:12px;line-height:18px;color:var(--ink2);text-decoration:none;max-width:100%;background:var(--surface)}
+.node span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+a.node:hover{background:var(--hover)}
+.node .ic{width:12px;height:12px}
+.allok{color:var(--muted);font-size:12.5px;padding:6px 0;border-top:1px solid var(--grid)}
+.reasons{margin:0;padding:0;list-style:none}
+.reasons li{line-height:1.4}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="bar">
+    <div class="brand">webMethods Hub<small>health check</small></div>
+    <nav id="nav" aria-label="Sections"></nav>
+    <div class="spacer"></div>
+    <div id="health" class="sub" role="status"></div>
+    <label class="sub"><input type="checkbox" id="auto" checked> Refresh every minute</label>
+    <button class="btn small" id="theme" title="Toggle light / dark">Theme</button>
+  </div>
+  <div class="filters" id="filters"></div>
+</header>
+<main id="app" aria-live="polite"></main>
+<div id="tip" role="tooltip"></div>
+
+<script>
+"use strict";
+/* ---------- helpers ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const state = { env: "ALL", hours: 6, auto: true, servers: [], showRetired: false, problemsOnly: false, expanded: new Set(), lastHtml: "", alertCount: 0, environments: [], updated: 0 };
+const REFRESH_MS = 60000;
+try { const t = localStorage.getItem("wmhub.theme"); if (t) document.documentElement.dataset.theme = t; const e = localStorage.getItem("wmhub.env"); if (e) state.env = e; const h = localStorage.getItem("wmhub.hours"); if (h) state.hours = +h || 6; state.problemsOnly = localStorage.getItem("wmhub.problems") === "1"; } catch (_) {}
+
+async function api(path, opts = {}) {
+  const o = { method: opts.method || "GET", headers: {} };
+  if (o.method !== "GET") { o.headers["X-WM-Hub"] = "1"; o.headers["Content-Type"] = "application/json"; o.body = JSON.stringify(opts.body || {}); }
+  const r = await fetch(path, o);
+  if (!r.ok) { let m = r.statusText; try { m = (await r.json()).error || m; } catch (_) {} throw new Error(m); }
+  return r.json();
+}
+const pad = n => String(n).padStart(2, "0");
+const fmtTs = (t, short) => { if (!t) return "-"; const d = new Date(t * 1000); const hm = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; return short && Date.now() - d < 864e5 ? hm : `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${hm}`; };
+const iso = t => t ? new Date(t * 1000).toISOString() : "";
+const ago = t => { if (!t) return "never"; const s = Math.max(0, Math.round(Date.now() / 1000 - t)); return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.floor(s/60)}m ago` : s < 86400 ? `${Math.floor(s/3600)}h ago` : `${Math.floor(s/86400)}d ago`; };
+const compact = n => n == null ? "-" : Math.abs(n) >= 1e6 ? (n/1e6).toFixed(1).replace(/\.0$/,"")+"M" : Math.abs(n) >= 1e3 ? (n/1e3).toFixed(1).replace(/\.0$/,"")+"K" : String(Math.round(n * 100) / 100);
+const tip = html => `data-tip="${esc(html)}"`;
+
+/* ---------- icons: status is never colour alone ---------- */
+const svg = inner => `<svg class="ic" viewBox="0 0 16 16" aria-hidden="true">${inner}</svg>`;
+const ICON = {
+  ok: svg('<circle cx="8" cy="8" r="7" fill="var(--good)"/><path d="M4.6 8.3l2.3 2.3 4.5-4.8" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'),
+  warn: svg('<path d="M8 1.6L15 14H1z" fill="var(--warn)" stroke="var(--warn)" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 6v4M8 11.7v.1" stroke="#0b0b0b" stroke-width="1.7" stroke-linecap="round"/>'),
+  crit: svg('<circle cx="8" cy="8" r="7" fill="var(--crit)"/><path d="M5.4 5.4l5.2 5.2M10.6 5.4l-5.2 5.2" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>'),
+  down: svg('<circle cx="8" cy="8" r="7" fill="var(--crit)"/><path d="M4.5 8h7" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>'),
+  maint: svg('<circle cx="8" cy="8" r="7" fill="var(--muted)"/><path d="M6.2 5v6M9.8 5v6" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>'),
+  info: svg('<circle cx="8" cy="8" r="7" fill="var(--muted)"/><path d="M8 7.2v4M8 4.9v.1" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>'),
+  nodata: svg('<circle cx="8" cy="8" r="6.2" fill="none" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="2.4 1.8"/><path d="M5.6 8h4.8" stroke="var(--muted)" stroke-width="1.6" stroke-linecap="round"/>'),
+};
+const STATUS = { OK: ["ok", "Healthy"], WARNING: ["warn", "Warning"], CRITICAL: ["crit", "Critical"], DOWN: ["down", "Down"], NODATA: ["nodata", "No data"], MAINT: ["maint", "Maintenance"], RETIRED: ["maint", "Retired"] };
+const statusIcon = s => { const [i, l] = STATUS[s] || ["info", s]; return `<span class="chip" role="img" aria-label="${l}" title="${l}">${ICON[i]}</span>`; };
+const statusChip = s => { const [i, l] = STATUS[s] || ["info", s]; return `<span class="chip">${ICON[i]}${l}</span>`; };
+const SEV = { critical: ["crit", "Critical"], warning: ["warn", "Warning"], info: ["info", "Info"] };
+const sevChip = s => { const [i, l] = SEV[s] || ["info", s]; return `<span class="chip">${ICON[i]}${l}</span>`; };
+const LVL = { FATAL: "crit", ERROR: "crit", WARN: "warn", INFO: "info", UNKNOWN: "info", DEBUG: "info", TRACE: "info" };
+const lvlChip = l => `<span class="chip">${ICON[LVL[l] || "info"]}${esc(l)}</span>`;
+const STATUS_ORDER = { DOWN: 0, CRITICAL: 1, WARNING: 2, NODATA: 3, MAINT: 4, OK: 5, RETIRED: 6 };
+const PROBLEM = new Set(["DOWN", "CRITICAL", "WARNING", "NODATA"]);
+
+/* ---------- charts (inline SVG, no libraries) ---------- */
+function niceMax(v) { if (v <= 4) return 4; const p = Math.pow(10, Math.floor(Math.log10(v))); const f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
+function roundTopPath(x, y, w, h, r) { r = Math.min(r, h, w / 2); return `M${x},${y + h}L${x},${y + r}Q${x},${y} ${x + r},${y}L${x + w - r},${y}Q${x + w},${y} ${x + w},${y + r}L${x + w},${y + h}Z`; }
+function bucketLabel(t, bucketS) { const d = new Date(t * 1000); return bucketS >= 1800 ? `${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:00` : `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+
+function columnsChart(buckets, bucketS) {
+  const W = 720, H = 210, L = 38, R = 6, T = 10, B = 24, pw = W - L - R, ph = H - T - B;
+  const n = buckets.length || 1, slot = pw / n, bw = Math.min(24, Math.max(2, slot - 2));
+  const max = niceMax(Math.max(1, ...buckets.map(b => b.errors + b.warns)));
+  const y = v => T + ph - (v / max) * ph;
+  let g = "", bars = "", hits = "", xl = "";
+  for (const f of [0, .5, 1]) { const v = max * f; g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="${f === 0 ? "var(--axis)" : "var(--grid)"}" stroke-width="1"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${compact(v)}</text>`; }
+  const every = Math.ceil(n / 7);
+  buckets.forEach((b, i) => {
+    const x = L + i * slot + (slot - bw) / 2;
+    const eh = (b.errors / max) * ph, wh = (b.warns / max) * ph;
+    const gap = eh > 0 && wh > 0 ? 2 : 0;
+    if (b.errors > 0) bars += eh >= 3 && wh === 0 ? `<path d="${roundTopPath(x, y(b.errors), bw, eh, 4)}" fill="var(--crit)"/>` : `<rect x="${x}" y="${y(b.errors)}" width="${bw}" height="${Math.max(1, eh)}" fill="var(--crit)"/>`;
+    if (b.warns > 0) { const wy = y(b.errors + b.warns); const hh = Math.max(1, wh - gap); bars += `<path d="${roundTopPath(x, wy, bw, hh, 4)}" fill="var(--warn)"/>`; }
+    hits += `<rect class="hit" x="${L + i * slot}" y="${T}" width="${slot}" height="${ph}" ${tip(`<b>${bucketLabel(b.t, bucketS)}</b><br>Errors ${b.errors} · Warnings ${b.warns}<br><span class='muted'>${b.total} events in total</span>`)}/>`;
+    if (i % every === 0) xl += `<text x="${L + i * slot + slot / 2}" y="${H - 6}" text-anchor="middle">${bucketLabel(b.t, bucketS)}</text>`;
+  });
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Errors and warnings per ${bucketS / 60} minutes">${g}${bars}${xl}${hits}</svg>`;
+}
+function tableTwin(buckets, bucketS) {
+  return `<details class="tv"><summary>View as table</summary><div class="scroll"><table class="t"><thead><tr><th>Time</th><th class="num">Errors</th><th class="num">Warnings</th><th class="num">All events</th></tr></thead><tbody>` +
+    buckets.slice().reverse().map(b => `<tr><td>${bucketLabel(b.t, bucketS)}</td><td class="num">${b.errors}</td><td class="num">${b.warns}</td><td class="num">${b.total}</td></tr>`).join("") + `</tbody></table></div></details>`;
+}
+function spark(points, o) {
+  if (!points || points.length < 2) return `<div class="muted" style="height:64px;padding-top:20px">Collecting data…</div>`;
+  const W = 240, H = 64, L = 4, R = 8, T = 6, B = 6, pw = W - L - R, ph = H - T - B;
+  const t0 = points[0][0], t1 = points[points.length - 1][0] || t0 + 1;
+  let lo = o.domain ? o.domain[0] : Math.min(...points.map(p => p[1])), hi = o.domain ? o.domain[1] : Math.max(1e-9, ...points.map(p => p[1]));
+  if (hi <= lo) hi = lo + 1;
+  const x = t => L + ((t - t0) / (t1 - t0 || 1)) * pw, y = v => T + ph - ((Math.min(Math.max(v, lo), hi) - lo) / (hi - lo)) * ph;
+  const line = points.map((p, i) => `${i ? "L" : "M"}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join("");
+  const area = `${line}L${x(t1)},${T + ph}L${x(t0)},${T + ph}Z`;
+  let pts = "";
+  points.forEach((p, i) => {
+    const a = i ? (x(points[i - 1][0]) + x(p[0])) / 2 : L, b = i < points.length - 1 ? (x(p[0]) + x(points[i + 1][0])) / 2 : W - R;
+    pts += `<g class="pt"><rect class="hit" x="${a}" y="0" width="${Math.max(2, b - a)}" height="${H}" ${tip(`<b>${esc(o.fmt(p[1]))}</b><br><span class='muted'>${fmtTs(p[0], true)}</span>`)}/><line class="xh" x1="${x(p[0])}" x2="${x(p[0])}" y1="${T}" y2="${T + ph}" stroke="var(--axis)"/><circle class="dot" cx="${x(p[0])}" cy="${y(p[1])}" r="4" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/></g>`;
+  });
+  const last = points[points.length - 1];
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.label)} trend"><path d="${area}" fill="var(--s1-wash)"/><path d="${line}" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${x(last[0])}" cy="${y(last[1])}" r="4" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/>${pts}</svg>`;
+}
+const meter = (v, warn, crit) => v == null ? '<span class="muted">-</span>' : `<span class="meter" aria-hidden="true"><i class="${v >= crit ? "c" : v >= warn ? "w" : ""}" style="width:${Math.min(100, Math.max(2, v))}%"></i></span>${v.toFixed(0)}%`;
+
+/* ---------- tooltip ---------- */
+const tipEl = $("#tip");
+document.addEventListener("mousemove", e => {
+  const t = e.target.closest ? e.target.closest("[data-tip]") : null;
+  if (!t) { tipEl.style.display = "none"; return; }
+  tipEl.innerHTML = t.dataset.tip; tipEl.style.display = "block";
+  const r = tipEl.getBoundingClientRect(); let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + r.width > innerWidth - 8) x = e.clientX - r.width - 14; if (y + r.height > innerHeight - 8) y = e.clientY - r.height - 14;
+  tipEl.style.left = x + "px"; tipEl.style.top = y + "px";
+});
+
+/* ---------- router ---------- */
+function route() {
+  const h = location.hash.replace(/^#\/?/, ""); const [p, q] = h.split("?");
+  const parts = p.split("/").filter(Boolean);
+  return { view: parts[0] || "overview", arg: parts[1] ? decodeURIComponent(parts[1]) : null, q: Object.fromEntries(new URLSearchParams(q || "")) };
+}
+const NAV = [["overview", "Overview"], ["alerts", "Alerts"], ["events", "Events"], ["rules", "Rules"], ["maintenance", "Maintenance"], ["notifications", "Notifications"]];
+function renderChrome(r) {
+  $("#nav").innerHTML = NAV.map(([k, l]) => `<a href="#/${k}" ${r.view === k || (k === "overview" && r.view === "server") ? 'aria-current="page"' : ""}>${l}${k === "alerts" && state.alertCount ? `<span class="count" aria-label="${state.alertCount} open critical alerts">${state.alertCount}</span>` : ""}</a>`).join("");
+  const scoped = ["overview", "server", "alerts"].includes(r.view);
+  $("#filters").innerHTML = scoped ? `<label>Landscape <select id="f-env"><option value="ALL">All</option>${state.environments.map(e => `<option ${e === state.env ? "selected" : ""}>${esc(e)}</option>`).join("")}</select></label>
+    <label>Time range <select id="f-hours">${[[1, "Last hour"], [6, "Last 6 hours"], [24, "Last 24 hours"], [72, "Last 3 days"]].map(([v, l]) => `<option value="${v}" ${v === state.hours ? "selected" : ""}>${l}</option>`).join("")}</select></label>` : "";
+  const fe = $("#f-env"), fh = $("#f-hours");
+  if (fe) fe.onchange = () => { state.env = fe.value; try { localStorage.setItem("wmhub.env", state.env); } catch (_) {} render(); };
+  if (fh) fh.onchange = () => { state.hours = +fh.value; try { localStorage.setItem("wmhub.hours", state.hours); } catch (_) {} render(); };
+}
+
+/* ---------- views ---------- */
+const VIEWS = {};
+
+VIEWS.overview = async () => {
+  const [hc, d] = await Promise.all([api("/api/v1/healthcheck"), api(`/api/v1/overview?hours=${state.hours}&env=${encodeURIComponent(state.env)}`)]);
+  state.environments = d.environments; state.servers = d.servers; state.updated = Date.now();
+  const inLs = name => state.env === "ALL" || name === state.env;
+  const lss = hc.landscapes.filter(L => inLs(L.name));
+  const nodes = lss.flatMap(L => L.clusters.flatMap(c => c.nodes)).filter(n => n.status !== "RETIRED");
+  const healthy = nodes.filter(n => n.status === "OK").length, down = nodes.filter(n => n.status === "DOWN").length, nodata = nodes.filter(n => n.status === "NODATA").length, maint = nodes.filter(n => n.status === "MAINT").length;
+  const att = hc.attention.filter(n => n.shared ? (state.env === "ALL" || n.landscape.split(", ").some(x => x === state.env || x === "all")) : inLs(n.landscape));
+  const shared = hc.shared_storage.filter(s => state.env === "ALL" || !s.landscapes || s.landscapes.includes(state.env));
+  const range = state.hours <= 1 ? "last hour" : state.hours < 24 ? `last ${state.hours} h` : `last ${state.hours / 24} d`;
+  const po = state.problemsOnly;
+  const csv = `api/report.csv${po ? "?problems=1" : ""}`;
+  const banner = !hc.inventory.loaded ? `<div class="banner">No server list is loaded, so servers are grouped by the environment their agent reports and hosts that never report cannot be shown. Set <span class="mono">inventory_file</span> in collector.json (create it with <span class="mono">import_inventory.py</span>).</div>` : "";
+  const invErr = hc.inventory.errors.length ? `<div class="banner">Server list ${esc(hc.inventory.path)}: ${hc.inventory.errors.map(esc).join("; ")}</div>` : "";
+  const controls = `<div class="controls"><label><input type="checkbox" id="problems" ${po ? "checked" : ""}> Problems only</label><a class="btn small" href="${csv}" download>Export CSV</a><span class="sub">Updated ${fmtTs(hc.now, true)}</span></div>`;
+  const tiles = `<div class="tiles">
+    <div class="tile"><div class="lbl">Servers healthy</div><div class="val">${healthy}<small> / ${nodes.length}</small></div><div class="note">${maint} in maintenance</div></div>
+    <div class="tile"><div class="lbl">Needs attention</div><div class="val">${att.length}</div><div class="note">${down} down · ${nodata} with no data</div></div>
+    <div class="tile"><div class="lbl">Critical alerts</div><div class="val">${d.alerts_open.critical}</div><div class="note">${d.alerts_open.warning} warning · ${d.alerts_acked} acknowledged</div></div>
+    <div class="tile"><div class="lbl">Errors, last hour</div><div class="val">${compact(d.errors_1h)}</div><div class="note">${compact(d.events_1h)} events ingested</div></div></div>`;
+  const nodeChip = n => { const [i, l] = STATUS[n.status] || ["info", n.status]; const label = n.roles.length ? n.roles.join(" / ") : (n.server || n.host);
+    const t = tip(`<b>${esc(label)}</b><br>${esc(n.host)}${n.server && n.server.toLowerCase() !== n.host.toLowerCase() ? " · " + esc(n.server) : ""}<br>${l}${n.last_seen ? " · seen " + ago(n.last_seen) : ""}${n.reasons.length ? "<br>" + n.reasons.map(esc).join("<br>") : ""}`);
+    return n.server ? `<a class="node" href="#/server/${encodeURIComponent(n.server)}" ${t} aria-label="${esc(label)}: ${l}">${ICON[i]}<span>${esc(label)}</span></a>` : `<span class="node" ${t} aria-label="${esc(label)}: ${l}">${ICON[i]}<span>${esc(label)}</span></span>`; };
+  const lsCard = L => {
+    const live = L.clusters.flatMap(c => c.nodes).filter(n => n.status !== "RETIRED");
+    const ok = live.filter(n => n.status === "OK").length;
+    const cls = po ? L.clusters.filter(c => c.nodes.some(n => PROBLEM.has(n.status))) : L.clusters;
+    const body = cls.map(c => `<div class="cl"><div class="cn">${statusIcon(c.status)}<span class="name" title="${esc(c.name)}">${esc(c.name)}</span>${c.total > 1 ? `<small>${c.up}/${c.total} up</small>` : ""}</div><div class="nodes">${c.nodes.slice().sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]).filter(n => !po || PROBLEM.has(n.status)).map(nodeChip).join("")}</div></div>`).join("")
+      || `<div class="allok">${po ? `No problems · ${live.length} server${live.length === 1 ? "" : "s"}` : "No servers"}</div>`;
+    return `<section class="card ls" aria-label="${esc(L.name)} landscape"><header>${statusIcon(L.status)}<h3>${esc(L.name)}${L.code ? ` <span class="sub">${esc(L.code)}</span>` : ""}${L.listed ? "" : ' <span class="unlisted">(not in server list)</span>'}</h3><span class="sub">${ok}/${live.length} healthy · ${L.clusters.length} cluster${L.clusters.length === 1 ? "" : "s"}</span></header>${body}</section>`; };
+  const shownLs = po ? lss.filter(L => L.clusters.some(c => c.nodes.some(n => PROBLEM.has(n.status)))) : lss;
+  const lsHtml = lss.length ? (shownLs.length ? `<div class="ls-grid">${shownLs.map(lsCard).join("")}</div>` + (po && shownLs.length < lss.length ? `<div class="sub" style="margin-top:6px">${lss.length - shownLs.length} landscape(s) without problems hidden: ${lss.filter(L => !shownLs.includes(L)).map(L => esc(L.name)).join(", ")}</div>` : "") : `<section class="card"><div class="empty">No problems in ${state.env === "ALL" ? "any landscape" : esc(state.env)}.</div></section>`)
+    : `<section class="card"><div class="empty">No servers yet. Load a server list or start an agent with a valid token.</div></section>`;
+  const attHtml = att.length ? `<div class="scroll"><table class="t"><thead><tr><th>Status</th><th>Landscape</th><th>Cluster</th><th>Server</th><th>Why</th><th>Last seen</th></tr></thead><tbody>` + att.map(n => `<tr class="row${n.server ? " click" : ""}" ${n.server ? `data-go="#/server/${encodeURIComponent(n.server)}" tabindex="0"` : ""}><td>${statusChip(n.status)}</td><td>${esc(n.landscape)}</td><td>${esc(n.cluster)}</td><td style="white-space:nowrap"><b>${esc(n.shared || (n.roles.length ? n.roles.join(" / ") : n.server || n.host))}</b><div class="sub mono">${esc(n.host)}</div></td><td><ul class="reasons">${n.reasons.map(x => `<li>${esc(x)}</li>`).join("")}</ul></td><td>${n.last_seen ? `<span ${tip(fmtTs(n.last_seen))}>${ago(n.last_seen)}</span>` : '<span class="muted">-</span>'}</td></tr>`).join("") + `</tbody></table></div>`
+    : `<div class="empty">Nothing needs attention.</div>`;
+  const shHtml = shared.length ? `<div class="scroll"><table class="t"><thead><tr><th>Status</th><th>Share</th><th>Path</th><th>Landscapes</th><th>Used</th><th class="num">Free</th><th>Mounted</th></tr></thead><tbody>` + shared.filter(s => !po || PROBLEM.has(s.status) || s.missing_on.length).map(s => `<tr class="row"><td>${statusChip(s.status)}</td><td><b>${esc(s.name)}</b></td><td class="mono">${esc(s.path)}</td><td>${esc(s.landscapes ? s.landscapes.join(", ") : "all")}</td><td>${meter(s.used_pct, s.limit, s.critical)} <span class="sub">limit ${s.limit}%</span>${s.spread_pct > 2 ? ` <span class="sub" ${tip("Servers report different values for this share; the fullest is shown. Check that every server mounts the same share.")}>±${s.spread_pct}</span>` : ""}</td><td class="num">${s.free_gb == null ? "-" : compact(s.free_gb) + " GB"}</td><td>${s.missing_on.length ? `<span class="chip" ${tip("Not mounted on: " + s.missing_on.map(esc).join(", "))}>${ICON.crit}missing on ${s.missing_on.length}</span> · ` : ""}on ${s.servers} server${s.servers === 1 ? "" : "s"}</td></tr>`).join("") + `</tbody></table></div>`
+    : `<div class="empty">No shared storage defined. Add <span class="mono">shared_storage</span> entries to the server list so NAS shares are counted once instead of on every server.</div>`;
+
+  const rows = d.servers.filter(s => state.showRetired || s.status !== "RETIRED").filter(s => !po || PROBLEM.has(s.status)).sort((a, b) => (STATUS_ORDER[a.status] - STATUS_ORDER[b.status]) || a.name.localeCompare(b.name));
+  const srv = rows.length ? `<div class="scroll"><table class="t"><thead><tr><th>Status</th><th>Server</th><th>Landscape</th><th>Cluster</th><th>Last seen</th><th class="num">Errors 1h</th><th class="num">Warnings 1h</th><th>Alerts</th><th>Disk</th><th class="num">Load/CPU</th><th>Probes</th></tr></thead><tbody>` +
+    rows.map(s => `<tr class="row click" data-go="#/server/${encodeURIComponent(s.name)}" tabindex="0"><td>${statusChip(s.status)}</td><td style="white-space:nowrap"><b>${esc(s.roles.length ? s.roles.join(" / ") : s.name)}</b><div class="sub">${esc(s.name)}${s.host && s.host.toLowerCase() !== s.name.toLowerCase() ? " · " + esc(s.host) : ""}</div></td><td>${esc(s.landscape)}</td><td>${esc(s.cluster || "-")}</td><td ${tip(fmtTs(s.last_seen))}>${s.silent_s < 5 ? "now" : ago(s.last_seen)}</td><td class="num">${s.errors_1h}</td><td class="num">${s.warns_1h}</td><td>${["critical", "warning", "info"].map(k => s.alerts[k] ? `<span class="chip" style="margin-right:8px">${ICON[SEV[k][0]]}${s.alerts[k]}</span>` : "").join("") || '<span class="muted">none</span>'}</td><td ${s.disk_max_path ? tip(esc(s.disk_max_path) + (s.disk_warn != null ? ` · limit ${s.disk_warn}%` : "")) : ""}>${meter(s.disk_max_pct, s.disk_warn ?? Infinity, s.disk_crit ?? Infinity)}</td><td class="num">${s.load_per_cpu == null ? "-" : s.load_per_cpu.toFixed(2)}</td><td>${s.probes_total ? (s.probes_failed ? `<span class="chip">${ICON.crit}${s.probes_failed} failing</span>` : `<span class="chip">${ICON.ok}${s.probes_total} ok</span>`) : '<span class="muted">-</span>'}</td></tr>`).join("") + `</tbody></table></div>`
+    : `<div class="empty">${po ? "No reporting server has a problem." : "No servers have reported yet. Start an agent with a valid token and its server appears here within one heartbeat."}</div>`;
+  const alerts = d.alerts.length ? `<table class="t"><tbody>` + d.alerts.slice(0, 8).map(a => `<tr class="row click" data-go="#/alerts/${a.id}" tabindex="0"><td style="width:1%">${sevChip(a.severity)}</td><td>${esc(a.title)}<div class="sub">${a.server === "*FLEET*" ? "Whole fleet" : esc(a.server)} · ${ago(a.first_seen)}${a.state === "acked" ? " · acknowledged by " + esc(a.ack_by) : ""}</div></td></tr>`).join("") + `</tbody></table>` : `<div class="empty">No open alerts.</div>`;
+  const top = d.top_errors.length ? `<div class="scroll"><table class="t"><thead><tr><th>Error pattern</th><th class="num">Count</th><th class="num">Servers</th></tr></thead><tbody>` + d.top_errors.map(e => `<tr class="row click" data-go="#/events?fp=${e.fp}&min_level=ERROR&hours=${state.hours}" tabindex="0"><td><span class="mono">${esc(e.code || "-")}</span> ${esc(e.sample.slice(0, 110))}<div class="sub">last ${ago(e.last_ts)}</div></td><td class="num">${e.n}</td><td class="num">${e.servers}</td></tr>`).join("") + `</tbody></table></div>` : `<div class="empty">No errors in this period.</div>`;
+  return `<h1>webMethods health check</h1><div class="sub">${esc(state.env === "ALL" ? "All landscapes" : state.env)} · ${nodes.length} servers · trends for the ${range}</div>${controls}${banner}${invErr}${tiles}
+  <h2 class="sec">Landscapes and clusters</h2>${lsHtml}
+  <h2 class="sec">Needs attention</h2><section class="card">${attHtml}</section>
+  <h2 class="sec">Shared storage</h2><div class="sub" style="margin:-4px 0 8px">NAS shares, counted once for all servers</div><section class="card">${shHtml}</section>
+  <h2 class="sec">Activity</h2>
+  <div class="grid">
+   <section class="card c7"><header><h2>Errors and warnings over time</h2><span class="sub">per ${d.bucket_s / 60} min</span></header><div class="legend"><span><i class="sw" style="background:var(--crit)"></i>Errors</span><span><i class="sw" style="background:var(--warn)"></i>Warnings</span></div>${columnsChart(d.trend, d.bucket_s)}${tableTwin(d.trend, d.bucket_s)}</section>
+   <section class="card c5"><header><h2>Open alerts</h2><span class="sub"><a href="#/alerts">all alerts</a></span></header>${alerts}</section>
+   <section class="card c12"><header><h2>Top error patterns</h2><span class="sub">errors and fatals, ${range}; grouped by fingerprint</span></header>${top}</section>
+   <section class="card c12"><details ${state.serversOpen ? "open" : ""} id="srv-details"><summary style="cursor:pointer"><h2 style="display:inline">All reporting servers</h2> <span class="sub">${rows.length} shown</span> <label class="sub" style="margin-left:10px"><input type="checkbox" id="retired" ${state.showRetired ? "checked" : ""}> show retired</label></summary>${srv}</details></section>
+  </div>`;
+};
+
+VIEWS.server = async (r) => {
+  const d = await api(`/api/v1/servers/${encodeURIComponent(r.arg)}?hours=${state.hours}`);
+  const s = d.server;
+  const sparkDefs = Object.keys(d.series).map(name => {
+    const [base, label] = name.split(/:(.*)/s);
+    const defs = { disk_used_pct: ["Disk used", "%", [0, 100]], load_per_cpu: ["CPU load per core", "", null], mem_used_pct: ["Memory used", "%", [0, 100]], probe_ms: ["Probe latency", " ms", null], log_age_s: ["Since last write", " s", null], agent_spool_files: ["Agent backlog", " batches", null] }[base];
+    return defs ? { name, title: defs[0] + (label ? " · " + label : ""), unit: defs[1], domain: defs[2] } : null;
+  }).filter(Boolean);
+  const cards = sparkDefs.map(x => { const pts = d.series[x.name]; const cur = d.metrics[x.name]?.value; const vals = pts.map(p => p[1]); const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+    return `<div class="spark"><div class="l" title="${esc(x.title)}">${esc(x.title)}</div><div class="v">${cur == null ? "-" : compact(cur)}<small class="muted" style="font-size:13px;font-weight:400">${esc(x.unit)}</small></div>${spark(pts, { fmt: v => compact(v) + x.unit, label: x.title, domain: x.domain })}<div class="sub">min ${compact(Math.min(...vals))} · avg ${compact(avg)} · max ${compact(Math.max(...vals))}</div></div>`; }).join("");
+  const probes = Object.entries(d.metrics).filter(([k]) => k.startsWith("probe_ok:")).map(([k, v]) => `<span class="chip" style="margin-right:12px">${v.value ? ICON.ok : ICON.crit}${esc(k.slice(9))}: ${v.value ? "up" : "failing"}</span>`).join("") || '<span class="muted">none configured</span>';
+  const alerts = d.alerts.length ? `<table class="t"><tbody>` + d.alerts.map(a => `<tr class="row click" data-go="#/alerts/${a.id}" tabindex="0"><td style="width:1%">${a.state === "resolved" ? '<span class="muted">Resolved</span>' : sevChip(a.severity)}</td><td>${esc(a.title)}<div class="sub">${a.state} · first seen ${ago(a.first_seen)}</div></td></tr>`).join("") + `</tbody></table>` : `<div class="empty">No alerts for this server.</div>`;
+  const top = d.top_errors.length ? `<table class="t"><tbody>` + d.top_errors.map(e => `<tr class="row click" data-go="#/events?server=${encodeURIComponent(s.name)}&fp=${e.fp}&min_level=ERROR&hours=${state.hours}" tabindex="0"><td><span class="mono">${esc(e.code || "-")}</span> ${esc(e.sample.slice(0, 100))}</td><td class="num">${e.n}</td></tr>`).join("") + `</tbody></table>` : `<div class="empty">No errors in this period.</div>`;
+  return `<div class="crumb"><a href="#/overview">Overview</a> / ${esc(s.name)}</div>
+  <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><h1 style="margin:6px 0">${esc(s.name)}</h1>${statusChip(s.status)}<span class="spacer"></span>
+   <div class="actions"><button class="btn small" data-act="maint" data-server="${esc(s.name)}" data-min="60">Maintenance 1 h</button><button class="btn small" data-act="maint" data-server="${esc(s.name)}" data-min="240">4 h</button>
+   ${s.state === "retired" ? `<button class="btn small" data-act="activate" data-server="${esc(s.name)}">Reactivate</button>` : `<button class="btn small danger" data-act="retire" data-server="${esc(s.name)}">Retire</button>`}</div></div>
+  <div class="grid" style="margin-top:8px">
+   <section class="card c5"><header><h2>Details</h2></header><dl class="kv"><dt>Landscape</dt><dd>${esc(s.landscape)}${s.listed ? "" : ' <span class="muted">(not in server list)</span>'}</dd>${s.environment !== s.landscape ? `<dt>Agent environment</dt><dd>${esc(s.environment)}</dd>` : ""}<dt>Cluster</dt><dd>${esc(s.cluster || "-")}</dd><dt>Roles</dt><dd>${esc(s.roles.join(", ") || "-")}</dd>${s.mounts_missing.length ? `<dt>Not mounted</dt><dd><span class="chip">${ICON.crit}${s.mounts_missing.map(esc).join(", ")}</span></dd>` : ""}<dt>Host</dt><dd>${esc(s.host || "-")}</dd><dt>Operating system</dt><dd>${esc(s.os || "-")}</dd><dt>Agent version</dt><dd>${esc(s.agent_version || "-")}</dd><dt>Last heartbeat</dt><dd ${tip(fmtTs(s.last_seen))}>${ago(s.last_seen)}</dd><dt>First seen</dt><dd>${fmtTs(s.first_seen)}</dd><dt>Tags</dt><dd>${Object.entries(s.tags).map(([k, v]) => `<span class="pill">${esc(k)}=${esc(v)}</span>`).join(" ") || "-"}</dd><dt>Log sources</dt><dd>${d.sources.map(esc).join(", ") || "-"}</dd><dt>Probes</dt><dd>${probes}</dd></dl></section>
+   <section class="card c7"><header><h2>Errors and warnings over time</h2><span class="sub">per ${d.bucket_s / 60} min</span></header><div class="legend"><span><i class="sw" style="background:var(--crit)"></i>Errors</span><span><i class="sw" style="background:var(--warn)"></i>Warnings</span></div>${columnsChart(d.trend, d.bucket_s)}</section>
+   <section class="card c12"><header><h2>Host and agent metrics</h2><span class="sub">last ${state.hours} h</span></header><div class="spark-grid">${cards || '<div class="empty">No heartbeat metrics yet.</div>'}</div></section>
+   <section class="card c6"><header><h2>Alerts</h2></header>${alerts}</section>
+   <section class="card c6"><header><h2>Top error patterns</h2></header>${top}</section>
+   <section class="card c12"><header><h2>Recent warnings and errors</h2><span class="sub"><a href="#/events?server=${encodeURIComponent(s.name)}&min_level=WARN&hours=${state.hours}">open in event explorer</a></span></header>${eventsTable(d.events, false)}</section>
+  </div>`;
+};
+
+function eventsTable(evs, showServer = true) {
+  if (!evs.length) return `<div class="empty">No events match.</div>`;
+  return `<div class="scroll"><table class="t"><thead><tr><th>Time</th><th>Level</th>${showServer ? "<th>Server</th>" : ""}<th>Source</th><th>Code</th><th>Message</th></tr></thead><tbody>` + evs.map(e => {
+    const open = state.expanded.has(e.id);
+    return `<tr class="row click" data-act="toggle" data-id="${e.id}" tabindex="0" aria-expanded="${open}"><td class="mono" ${tip(iso(e.ts))}>${fmtTs(e.ts, true)}</td><td>${lvlChip(e.level)}</td>${showServer ? `<td>${esc(e.server)}</td>` : ""}<td>${esc(e.source)}</td><td class="mono">${esc(e.code || "")}</td><td>${esc((e.msg || "").slice(0, open ? 4000 : 160))}${!open && e.detail ? ' <span class="muted">…</span>' : ""}</td></tr>` +
+      (open ? `<tr class="row-detail"><td colspan="${showServer ? 6 : 5}"><div class="sub">thread ${esc(e.tid || "-")} · fingerprint <a href="#/events?fp=${e.fp}">${e.fp}</a> (similar events) · ${iso(e.ts)}</div>${e.detail ? `<pre class="detail">${esc(e.detail)}</pre>` : ""}</td></tr>` : "");
+  }).join("") + `</tbody></table></div>`;
+}
+
+VIEWS.alerts = async (r) => {
+  if (r.arg) return alertDetail(r.arg);
+  const tab = r.q.state || "open";
+  const states = tab === "open" ? "open" : tab === "acked" ? "acked" : "resolved";
+  const d = await api(`/api/v1/alerts?state=${states}&limit=300`);
+  let list = d.alerts.filter(a => state.env === "ALL" || a.environment === state.env);
+  const tabs = [["open", "Open"], ["acked", "Acknowledged"], ["resolved", "Resolved"]].map(([k, l]) => `<a href="#/alerts?state=${k}" ${tab === k ? 'aria-current="true"' : ""}>${l}</a>`).join("");
+  const body = list.length ? `<div class="scroll"><table class="t"><thead><tr><th>Severity</th><th>Alert</th><th>Server</th><th>Rule</th><th>First seen</th><th>Last seen</th><th class="num">Hits</th><th></th></tr></thead><tbody>` + list.map(a => `<tr class="row click" data-go="#/alerts/${a.id}" tabindex="0"><td>${sevChip(a.severity)}</td><td>${esc(a.title)}${a.state === "acked" ? `<div class="sub">acknowledged by ${esc(a.ack_by)} ${ago(a.ack_at)}${a.ack_note ? ": " + esc(a.ack_note) : ""}</div>` : ""}</td><td style="white-space:nowrap">${esc(a.server)}</td><td class="mono" style="white-space:nowrap" ${tip(esc(a.rule_name))}>${esc(a.rule_id)}</td><td ${tip(iso(a.first_seen))}>${ago(a.first_seen)}</td><td>${ago(a.last_seen)}</td><td class="num">${a.hits}</td><td style="white-space:nowrap"><div class="actions" style="flex-wrap:nowrap">${a.state === "open" ? `<button class="btn small" data-act="ack" data-id="${a.id}">Acknowledge</button>` : a.state === "acked" ? `<button class="btn small" data-act="unack" data-id="${a.id}">Reopen</button>` : ""}${a.state !== "resolved" ? `<button class="btn small" data-act="resolve" data-id="${a.id}">Resolve</button>` : ""}</div></td></tr>`).join("") + `</tbody></table></div>` : `<div class="empty">Nothing here.</div>`;
+  return `<h1>Alerts</h1><div class="tabs">${tabs}</div><section class="card">${body}</section>`;
+};
+
+async function alertDetail(id) {
+  const d = await api(`/api/v1/alerts/${id}`); const a = d.alert;
+  return `<div class="crumb"><a href="#/alerts">Alerts</a> / #${a.id}</div>
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><h1 style="margin:6px 0">${esc(a.title)}</h1></div>
+  <div class="grid">
+   <section class="card c5"><header><h2>Summary</h2></header><dl class="kv"><dt>Severity</dt><dd>${sevChip(a.severity)}</dd><dt>State</dt><dd>${esc(a.state)}${a.ack_by ? ` by ${esc(a.ack_by)} ${ago(a.ack_at)}` : ""}${a.resolved_by ? ` by ${esc(a.resolved_by)} ${ago(a.resolved_at)}` : ""}</dd><dt>Server</dt><dd>${a.server === "*FLEET*" ? "Whole fleet" : `<a href="#/server/${encodeURIComponent(a.server)}">${esc(a.server)}</a>`} (${esc(a.environment || "-")})</dd><dt>Rule</dt><dd>${esc(a.rule_name)} <span class="mono muted">${esc(a.rule_id)}</span></dd><dt>First seen</dt><dd>${fmtTs(a.first_seen)}</dd><dt>Last seen</dt><dd>${fmtTs(a.last_seen)} (${a.hits} evaluations)</dd><dt>Notifications</dt><dd>${a.notify_count} sent</dd>${a.runbook ? `<dt>Runbook</dt><dd><a href="${esc(a.runbook)}" target="_blank" rel="noopener noreferrer">${esc(a.runbook)}</a></dd>` : ""}</dl>
+    <pre class="detail">${esc(a.detail)}</pre>
+    ${a.state !== "resolved" ? `<div class="actions" style="margin-top:10px">${a.state === "open" ? `<input type="text" id="ack-note" placeholder="Note (optional)" size="26"><button class="btn primary" data-act="ack" data-id="${a.id}" data-note="1">Acknowledge</button>` : `<button class="btn" data-act="unack" data-id="${a.id}">Reopen</button>`}<button class="btn" data-act="resolve" data-id="${a.id}">Resolve</button></div>` : ""}</section>
+   <section class="card c7"><header><h2>Notifications sent</h2></header>${d.notifications.length ? `<table class="t"><thead><tr><th>Time</th><th>Kind</th><th>Channel</th><th>Target</th><th>Status</th></tr></thead><tbody>${d.notifications.map(n => `<tr><td>${fmtTs(n.ts, true)}</td><td>${esc(n.kind)}</td><td>${esc(n.channel)}</td><td class="mono">${esc(n.target)}</td><td>${n.status === "failed" ? `<span class="chip">${ICON.crit}failed</span> <span class="sub">${esc(n.detail)}</span>` : esc(n.status)}</td></tr>`).join("")}</tbody></table>` : `<div class="empty">Nothing sent for this alert.</div>`}</section>
+   <section class="card c12"><header><h2>Related warnings and errors</h2><span class="sub">on the same server around the first occurrence</span></header>${eventsTable(d.events, false)}</section>
+  </div>`;
+}
+
+const EV_DEFAULT = { min_level: "WARN", hours: "1" };
+VIEWS.events = async (r) => {
+  const q = { ...EV_DEFAULT, ...r.q };
+  if (!state.servers.length) { try { state.servers = (await api("/api/v1/overview?hours=1")).servers; } catch (_) {} }
+  const now = Date.now() / 1000;
+  const p = new URLSearchParams({ limit: "200", min_level: q.min_level });
+  for (const k of ["server", "source", "code", "fp", "q"]) if (q[k]) p.set(k, q[k]);
+  if (q.hours !== "all") p.set("since", String(now - (+q.hours) * 3600));
+  const d = await api("/api/v1/events?" + p);
+  const sel = (id, opts, cur) => `<select id="${id}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${String(v) === String(cur) ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
+  const filt = `<section class="card" style="margin:12px 0"><div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center" id="ev-filters">
+    <label>Server ${sel("e-server", [["", "All"], ...state.servers.map(s => [s.name, s.name])], q.server || "")}</label>
+    <label>Level ${sel("e-level", [["TRACE", "All"], ["INFO", "Info and above"], ["WARN", "Warning and above"], ["ERROR", "Error and above"], ["FATAL", "Fatal only"]], q.min_level)}</label>
+    <label>Period ${sel("e-hours", [["0.25", "Last 15 min"], ["1", "Last hour"], ["6", "Last 6 hours"], ["24", "Last 24 hours"], ["72", "Last 3 days"], ["all", "All retained"]], q.hours)}</label>
+    <label>Source <input type="text" id="e-source" size="12" value="${esc(q.source || "")}" placeholder="server.log"></label>
+    <label>Code <input type="text" id="e-code" size="10" value="${esc(q.code || "")}" placeholder="ISS."></label>
+    <label>Text <input type="text" id="e-q" size="22" value="${esc(q.q || "")}" placeholder="contains…"></label>
+    ${q.fp ? `<span class="pill">fingerprint ${esc(q.fp)} <a href="#" data-act="clearfp">clear</a></span>` : ""}
+    <button class="btn" id="e-apply">Apply</button></div></section>`;
+  return `<h1>Event explorer</h1><div class="sub">Newest first, up to 200 events. Click a row for the stack trace.</div>${filt}<section class="card"><header><h2>${d.count} event${d.count === 1 ? "" : "s"}</h2></header>${eventsTable(d.events)}</section>`;
+};
+
+VIEWS.rules = async () => {
+  const d = await api("/api/v1/rules");
+  const lv = r => (r.levels ? r.levels.map(l => `${l.severity} ${r.type === "metric_threshold" ? (r.op || ">") + " " + (l.value ?? l.threshold) : "≥ " + (l.threshold ?? l.value)}`).join(", ") : r.type === "metric_threshold" ? `${r.severity} ${r.op || ">"} ${r.value}` : r.type === "event_count" ? `${r.severity} ≥ ${r.threshold ?? 1}` : r.severity);
+  const cond = r => r.type === "event_count" ? `${r.match?.min_level ? r.match.min_level + "+ " : ""}events${r.match?.message ? " matching /" + r.match.message.slice(0, 40) + (r.match.message.length > 40 ? "…" : "") + "/" : ""} in ${r.window_s / 60} min, per ${r.group_by}` : r.type === "metric_threshold" ? `${r.metric}${r.for_s ? " for " + r.for_s + " s" : ""}` : r.type === "heartbeat_missing" ? `no heartbeat for ${r.max_silence_s ?? "default"} s` : `first sighting of an error pattern (${r.window_s / 60} min)`;
+  return `<h1>Alert rules</h1><div class="sub">Defined in <span class="mono">rules.json</span> (keep it in Git; the collector reloads it automatically). Last evaluation ${ago(d.last_eval)}, ${d.last_eval_ms} ms.</div>
+  ${d.errors.length ? `<div class="banner bad">${d.errors.map(esc).join("<br>")}</div>` : ""}
+  <section class="card" style="margin-top:12px"><div class="scroll"><table class="t"><thead><tr><th>Rule</th><th>Name</th><th>Condition</th><th>Thresholds</th><th>Scope</th><th class="num">Firing</th></tr></thead><tbody>` +
+    d.rules.map(r => `<tr class="row"><td class="mono">${esc(r.id)}</td><td><b>${esc(r.name)}</b><div class="sub">${esc(r.description || "")}</div></td><td>${esc(cond(r))}</td><td>${esc(lv(r))}</td><td>${esc(r.scope?.environment ? r.scope.environment.join(", ") : "all")}${r.enabled ? "" : ' <span class="pill">disabled</span>'}</td><td class="num">${r.firing || 0}</td></tr>`).join("") + `</tbody></table></div></section>`;
+};
+
+VIEWS.maintenance = async () => {
+  const d = await api("/api/v1/maintenance"); const now = Date.now() / 1000;
+  return `<h1>Maintenance windows</h1><div class="sub">Servers in a window are not evaluated by any rule and generate no notifications. Use for planned patching and restarts.</div>
+  <section class="card" style="margin:12px 0"><header><h2>Start a window</h2></header><div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+   <label>Server (name or pattern) <input type="text" id="m-server" size="20" placeholder="IS-PRD-*"></label>
+   <label>Minutes <input type="number" id="m-min" value="60" min="1" max="20160" style="width:90px"></label>
+   <label>Reason <input type="text" id="m-reason" size="28" placeholder="Monthly patching"></label>
+   <button class="btn primary" data-act="maint-add">Start</button></div></section>
+  <section class="card">${d.maintenance.length ? `<table class="t"><thead><tr><th>Status</th><th>Server pattern</th><th>From</th><th>Until</th><th>Reason</th><th>By</th><th></th></tr></thead><tbody>` + d.maintenance.map(m => `<tr><td>${m.end_ts > now ? `<span class="chip">${ICON.maint}Active</span>` : '<span class="muted">Ended</span>'}</td><td class="mono">${esc(m.server_glob)}</td><td>${fmtTs(m.start_ts)}</td><td>${fmtTs(m.end_ts)}</td><td>${esc(m.reason)}</td><td>${esc(m.created_by)}</td><td>${m.end_ts > now ? `<button class="btn small" data-act="maint-end" data-id="${m.id}">End now</button>` : ""}</td></tr>`).join("") + `</tbody></table>` : `<div class="empty">No maintenance windows in the last 24 hours.</div>`}</section>`;
+};
+
+VIEWS.notifications = async () => {
+  const d = await api("/api/v1/notifications?limit=150");
+  return `<h1>Notification log</h1><div class="sub">Every email and Teams message the engine tried to send.</div><section class="card" style="margin-top:12px">${d.notifications.length ? `<div class="scroll"><table class="t"><thead><tr><th>Time</th><th>Alert</th><th>Kind</th><th>Channel</th><th>Target</th><th>Status</th></tr></thead><tbody>` + d.notifications.map(n => `<tr class="row click" data-go="#/alerts/${n.alert_id}" tabindex="0"><td ${tip(iso(n.ts))}>${fmtTs(n.ts, true)}</td><td>${esc(n.title || "#" + n.alert_id)}<div class="sub">${esc(n.server || "")}</div></td><td>${esc(n.kind)}</td><td>${esc(n.channel)}</td><td class="mono">${esc(n.target)}</td><td>${n.status === "failed" ? `<span class="chip">${ICON.crit}failed</span><div class="sub">${esc(n.detail)}</div>` : esc(n.status)}</td></tr>`).join("") + `</tbody></table></div>` : `<div class="empty">No notifications yet.</div>`}</section>`;
+};
+
+/* ---------- render loop ---------- */
+let busy = false;
+async function render(silent) {
+  if (busy) return; busy = true;
+  const r = route();
+  try {
+    const html = await (VIEWS[r.view] || VIEWS.overview)(r);
+    renderChrome(r);
+    if (!silent || html !== state.lastHtml) {
+      const y = scrollY; $("#app").innerHTML = html; state.lastHtml = html; if (silent) scrollTo(0, y);
+      wire();
+    }
+  } catch (e) {
+    $("#app").innerHTML = `<div class="banner bad">Could not load this view: ${esc(e.message)}</div>`; state.lastHtml = "";
+  }
+  busy = false;
+  refreshHealth();
+}
+async function refreshHealth() {
+  try {
+    const [s, a] = await Promise.all([api("/api/v1/status"), api("/api/v1/alerts?state=open&limit=500")]);
+    state.alertCount = a.alerts.filter(x => x.severity === "critical").length;
+    const age = s.stats.last_ingest ? Math.round(s.now - s.stats.last_ingest) : null;
+    $("#health").innerHTML = `<span class="chip">${age != null && age < 120 ? ICON.ok : ICON.warn}Collector ${age == null ? "idle" : "last data " + (age < 60 ? age + " s" : Math.round(age / 60) + " min") + " ago"}</span>` + (s.dry_run ? ` <span class="chip" style="margin-left:10px" ${tip("Notifications are written to the outbox folder instead of being sent")}>${ICON.warn}Notifications in dry-run</span>` : "");
+    const nav = $("#nav a[href='#/alerts']"); if (nav) { nav.querySelector(".count")?.remove(); if (state.alertCount) nav.insertAdjacentHTML("beforeend", `<span class="count">${state.alertCount}</span>`); }
+  } catch (_) { $("#health").innerHTML = `<span class="chip">${ICON.crit}Collector unreachable</span>`; }
+}
+function wire() {
+  const rt = $("#retired"); if (rt) rt.onchange = () => { state.showRetired = rt.checked; render(); };
+  const pb = $("#problems"); if (pb) pb.onchange = () => { state.problemsOnly = pb.checked; try { localStorage.setItem("wmhub.problems", pb.checked ? "1" : "0"); } catch (_) {} state.lastHtml = ""; render(); };
+  const sd = $("#srv-details"); if (sd) sd.ontoggle = () => { state.serversOpen = sd.open; };
+  const ap = $("#e-apply"); if (ap) {
+    const go = () => { const q = new URLSearchParams(); const set = (k, id) => { const v = $(id)?.value; if (v) q.set(k, v); };
+      set("server", "#e-server"); set("min_level", "#e-level"); set("hours", "#e-hours"); set("source", "#e-source"); set("code", "#e-code"); set("q", "#e-q");
+      const fp = route().q.fp; if (fp) q.set("fp", fp); location.hash = "#/events?" + q; };
+    ap.onclick = go; $("#ev-filters").onkeydown = e => { if (e.key === "Enter") go(); };
+    for (const id of ["#e-server", "#e-level", "#e-hours"]) $(id).onchange = go;
+  }
+}
+document.addEventListener("click", async e => {
+  const g = e.target.closest("[data-go]");
+  if (g && !e.target.closest("a,button")) { location.hash = g.dataset.go; return; }
+  const t = e.target.closest("[data-act]"); if (!t) return;
+  const act = t.dataset.act, id = t.dataset.id;
+  try {
+    if (act === "toggle") { const k = +id; state.expanded.has(k) ? state.expanded.delete(k) : state.expanded.add(k); state.lastHtml = ""; return render(); }
+    if (act === "clearfp") { e.preventDefault(); const q = new URLSearchParams(route().q); q.delete("fp"); location.hash = "#/events?" + q; return; }
+    e.stopPropagation();
+    if (act === "ack") await api(`/api/v1/alerts/${id}/ack`, { method: "POST", body: { note: t.dataset.note ? ($("#ack-note")?.value || "") : "" } });
+    else if (act === "unack" || act === "resolve") await api(`/api/v1/alerts/${id}/${act}`, { method: "POST" });
+    else if (act === "maint") await api("/api/v1/maintenance", { method: "POST", body: { server: t.dataset.server, minutes: +t.dataset.min, reason: "Started from server page" } });
+    else if (act === "maint-add") await api("/api/v1/maintenance", { method: "POST", body: { server: $("#m-server").value, minutes: +$("#m-min").value, reason: $("#m-reason").value } });
+    else if (act === "maint-end") await api(`/api/v1/maintenance/${id}`, { method: "DELETE" });
+    else if (act === "retire" || act === "activate") { if (act === "retire" && !confirm("Retire this server? It stops being evaluated and is hidden from the overview. Its history is kept.")) return; await api(`/api/v1/servers/${encodeURIComponent(t.dataset.server)}/${act}`, { method: "POST" }); }
+    state.lastHtml = ""; render();
+  } catch (err) { alert(err.message); }
+});
+document.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches("tr[data-go], tr[data-act]")) { e.preventDefault(); e.target.click(); } });
+$("#theme").onclick = () => { const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); const next = cur === "dark" ? "light" : "dark"; document.documentElement.dataset.theme = next; try { localStorage.setItem("wmhub.theme", next); } catch (_) {} };
+$("#auto").onchange = e => { state.auto = e.target.checked; };
+addEventListener("hashchange", () => { state.lastHtml = ""; render(); scrollTo(0, 0); });
+setInterval(() => { if (state.auto && !document.hidden && !document.activeElement?.matches?.("input[type=text],input[type=number],select,textarea")) render(true); }, REFRESH_MS);
+render();
+</script>
+</body>
+</html>

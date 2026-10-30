@@ -1,0 +1,652 @@
+{
+ "landscapes": [
+  {
+   "name": "Dev",
+   "code": "CON",
+   "servers": [
+    {
+     "host": "SITE1WMASD009",
+     "cluster": "Broker",
+     "roles": [
+      "Broker"
+     ]
+    },
+    {
+     "host": "SITE1WMASD008",
+     "cluster": "UM",
+     "roles": [
+      "UM"
+     ]
+    },
+    {
+     "host": "SITE1WMASD006",
+     "cluster": "MWS",
+     "roles": [
+      "MWS"
+     ]
+    },
+    {
+     "host": "site1wmasd010",
+     "cluster": "SBX",
+     "roles": [
+      "SBX"
+     ]
+    },
+    {
+     "host": "site1wmasd013",
+     "cluster": "SBX",
+     "roles": [
+      "SBX"
+     ]
+    },
+    {
+     "host": "site2wmasd102",
+     "cluster": "A2A & EDI",
+     "roles": [
+      "A2A & EDI"
+     ]
+    },
+    {
+     "host": "site2wmasd101",
+     "cluster": "CIS & B2B",
+     "roles": [
+      "CIS & B2B"
+     ]
+    },
+    {
+     "host": "SITE1WMASD011",
+     "cluster": "BATCH & PPI",
+     "roles": [
+      "BATCH & PPI"
+     ]
+    },
+    {
+     "host": "SITE1WMASD012",
+     "cluster": "Optimize & CCE",
+     "roles": [
+      "Optimize",
+      "CCE"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Test",
+   "code": "TST",
+   "servers": [
+    {
+     "host": "SITE1WMAST393",
+     "cluster": "Broker",
+     "roles": [
+      "Broker1"
+     ]
+    },
+    {
+     "host": "SITE1WMAST109",
+     "cluster": "Broker",
+     "roles": [
+      "Broker2"
+     ]
+    },
+    {
+     "host": "SITE1WMAST003",
+     "cluster": "UM",
+     "roles": [
+      "UM1"
+     ]
+    },
+    {
+     "host": "SITE1WMAST137",
+     "cluster": "UM",
+     "roles": [
+      "UM2"
+     ]
+    },
+    {
+     "host": "SITE1WMAST392",
+     "cluster": "UM",
+     "roles": [
+      "UM3"
+     ]
+    },
+    {
+     "host": "SITE1WMAST001",
+     "cluster": "MWS",
+     "roles": [
+      "MWS1"
+     ]
+    },
+    {
+     "host": "SITE1WMAST002",
+     "cluster": "MWS",
+     "roles": [
+      "MWS2"
+     ]
+    },
+    {
+     "host": "site3wmlpz127",
+     "cluster": "EDMZRI",
+     "roles": [
+      "EDMZRI1"
+     ]
+    },
+    {
+     "host": "site3wmlpz128",
+     "cluster": "EDMZRI",
+     "roles": [
+      "EDMZRI2"
+     ]
+    },
+    {
+     "host": "site2wmast101",
+     "cluster": "A2AIS",
+     "roles": [
+      "A2AIS1"
+     ]
+    },
+    {
+     "host": "site2wmast113",
+     "cluster": "A2AIS",
+     "roles": [
+      "A2AIS2"
+     ]
+    },
+    {
+     "host": "site2wmast118",
+     "cluster": "EDIIS",
+     "roles": [
+      "EDIIS1"
+     ]
+    },
+    {
+     "host": "site2wmast122",
+     "cluster": "EDIIS",
+     "roles": [
+      "EDIIS2"
+     ]
+    },
+    {
+     "host": "site2wmast100",
+     "cluster": "CIS",
+     "roles": [
+      "CIS01_TEST"
+     ]
+    },
+    {
+     "host": "site2wmast111",
+     "cluster": "CIS",
+     "roles": [
+      "CIS02_TEST"
+     ]
+    },
+    {
+     "host": "site2wmast116",
+     "cluster": "PPI BAT",
+     "roles": [
+      "PPI01_TEST_BAT"
+     ]
+    },
+    {
+     "host": "site2wmast123",
+     "cluster": "PPI BAT",
+     "roles": [
+      "PPI02_TEST_BAT"
+     ]
+    },
+    {
+     "host": "site2wmast117",
+     "cluster": "B2B",
+     "roles": [
+      "TST_B2B1"
+     ]
+    },
+    {
+     "host": "site2wmast121",
+     "cluster": "B2B",
+     "roles": [
+      "TST_B2B2"
+     ]
+    },
+    {
+     "host": "site1wmast007",
+     "cluster": "Optimize & CCE",
+     "roles": [
+      "Optimize & CCE"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "PROD",
+   "code": "",
+   "servers": [
+    {
+     "host": "SITE1WMASP010",
+     "cluster": "MWS",
+     "roles": [
+      "MWS01_PROD"
+     ]
+    },
+    {
+     "host": "SITE1WMASP013",
+     "cluster": "MWS",
+     "roles": [
+      "MWS02_PROD"
+     ]
+    },
+    {
+     "host": "SITE1WMASP011",
+     "cluster": "Broker",
+     "roles": [
+      "Broker01_PROD"
+     ]
+    },
+    {
+     "host": "SITE1WMASP012",
+     "cluster": "Broker",
+     "roles": [
+      "Broker02_PROD"
+     ]
+    },
+    {
+     "host": "SITE1WMASP434",
+     "cluster": "UM",
+     "roles": [
+      "PRD_UM1"
+     ]
+    },
+    {
+     "host": "SITE1WMASP436",
+     "cluster": "UM",
+     "roles": [
+      "PRD_UM2"
+     ]
+    },
+    {
+     "host": "SITE1WMASP433",
+     "cluster": "UM",
+     "roles": [
+      "PRD_UM3"
+     ]
+    },
+    {
+     "host": "site2wmasp119",
+     "cluster": "BAT PPI",
+     "roles": [
+      "PRD_BAT_PPI_01"
+     ]
+    },
+    {
+     "host": "site2wmasp127",
+     "cluster": "BAT PPI",
+     "roles": [
+      "PRD_BAT_PPI_02"
+     ]
+    },
+    {
+     "host": "site2wmasp130",
+     "cluster": "EDI",
+     "roles": [
+      "PRD_EDI_01"
+     ]
+    },
+    {
+     "host": "site1wmasp167",
+     "cluster": "EDI",
+     "roles": [
+      "PRD_EDI_02"
+     ]
+    },
+    {
+     "host": "site2wmasp131",
+     "cluster": "EDI",
+     "roles": [
+      "PRD_EDI_03"
+     ]
+    },
+    {
+     "host": "site3wmlpz144",
+     "cluster": "DMZ EDI",
+     "roles": [
+      "PRD_DMZ_EDI1"
+     ]
+    },
+    {
+     "host": "site3wmlpz149",
+     "cluster": "DMZ EDI",
+     "roles": [
+      "PRD_DMZ_EDI2"
+     ]
+    },
+    {
+     "host": "site2wmasp104",
+     "cluster": "CIS",
+     "roles": [
+      "PRD_CIS1"
+     ]
+    },
+    {
+     "host": "site2wmasp109",
+     "cluster": "CIS",
+     "roles": [
+      "PRD_CIS2"
+     ]
+    },
+    {
+     "host": "site2wmasp117",
+     "cluster": "CIS",
+     "roles": [
+      "PRD_CIS3"
+     ]
+    },
+    {
+     "host": "site2wmasp105",
+     "cluster": "A2A",
+     "roles": [
+      "PRD_A2A1"
+     ]
+    },
+    {
+     "host": "site2wmasp114",
+     "cluster": "A2A",
+     "roles": [
+      "PRD_A2A2"
+     ]
+    },
+    {
+     "host": "site2wmasp122",
+     "cluster": "A2A",
+     "roles": [
+      "PRD_A2A3"
+     ]
+    },
+    {
+     "host": "site2wmasp120",
+     "cluster": "B2B",
+     "roles": [
+      "PRD_B2B1"
+     ]
+    },
+    {
+     "host": "site2wmasp124",
+     "cluster": "B2B",
+     "roles": [
+      "PRD_B2B2"
+     ]
+    },
+    {
+     "host": "site2wmasp125",
+     "cluster": "B2B",
+     "roles": [
+      "PRD_B2B3"
+     ]
+    },
+    {
+     "host": "site2wmasp129",
+     "cluster": "B2B",
+     "roles": [
+      "PRD_B2B4"
+     ]
+    },
+    {
+     "host": "site1wmasp021",
+     "cluster": "OPT",
+     "roles": [
+      "PRD_OPT"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "CN1",
+   "code": "",
+   "servers": [
+    {
+     "host": "SITE1WMASD016",
+     "cluster": "UM",
+     "roles": [
+      "AWS_CN1_UM"
+     ]
+    },
+    {
+     "host": "SITE1WMASD015",
+     "cluster": "BR",
+     "roles": [
+      "AWS_CN1_BR"
+     ]
+    },
+    {
+     "host": "site1wmasd143",
+     "cluster": "CIS B2B",
+     "roles": [
+      "CN1_CIS_B2B"
+     ]
+    },
+    {
+     "host": "site1wmasd144",
+     "cluster": "BATCH PPI",
+     "roles": [
+      "CN1_BATCH_PPI"
+     ]
+    },
+    {
+     "host": "site1wmasd145",
+     "cluster": "A2A EDI",
+     "roles": [
+      "CN1_A2A_EDI"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "PSS",
+   "code": "",
+   "servers": [
+    {
+     "host": "SITE1WMAST401",
+     "cluster": "UM",
+     "roles": [
+      "AWS_PSS_UM"
+     ]
+    },
+    {
+     "host": "SITE1WMAST400",
+     "cluster": "BR",
+     "roles": [
+      "AWS_PSS_BR"
+     ]
+    },
+    {
+     "host": "site1wmast147",
+     "cluster": "CIS",
+     "roles": [
+      "PSS_CIS"
+     ]
+    },
+    {
+     "host": "site1wmast151",
+     "cluster": "A2A",
+     "roles": [
+      "PSS_A2A"
+     ]
+    },
+    {
+     "host": "site1wmast152",
+     "cluster": "EDI",
+     "roles": [
+      "PSS_EDI"
+     ]
+    },
+    {
+     "host": "site1wmast148",
+     "cluster": "BATCH",
+     "roles": [
+      "PSS_BATCH"
+     ]
+    },
+    {
+     "host": "site1wmast150",
+     "cluster": "B2B",
+     "roles": [
+      "PSS_B2B"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "DR",
+   "code": "",
+   "servers": [
+    {
+     "host": "SITE4WMASR202",
+     "cluster": "MWS",
+     "roles": [
+      "DR_MWS"
+     ]
+    },
+    {
+     "host": "SITE4WMASR201",
+     "cluster": "UM",
+     "roles": [
+      "DR_UM"
+     ]
+    },
+    {
+     "host": "SITE4WMASR203",
+     "cluster": "BR",
+     "roles": [
+      "DR_BR"
+     ]
+    },
+    {
+     "host": "site1wmasr104",
+     "cluster": "A2A",
+     "roles": [
+      "DR_A2A"
+     ]
+    },
+    {
+     "host": "site1wmasr107",
+     "cluster": "CIS",
+     "roles": [
+      "DR_CIS"
+     ]
+    },
+    {
+     "host": "site1wmasr108",
+     "cluster": "EDI",
+     "roles": [
+      "DR_EDI"
+     ]
+    },
+    {
+     "host": "site5wmlpz151",
+     "cluster": "DMZ RI",
+     "roles": [
+      "DR_DMZ_RI"
+     ]
+    },
+    {
+     "host": "site1wmasr105",
+     "cluster": "B2B",
+     "roles": [
+      "DR_B2B"
+     ]
+    },
+    {
+     "host": "site1wmasr106",
+     "cluster": "BATCH",
+     "roles": [
+      "DR_BATCH"
+     ]
+    }
+   ]
+  }
+ ],
+ "shared_storage": [
+  {
+   "name": "Dev wMNfs",
+   "path": "/wMNfs",
+   "landscapes": [
+    "Dev"
+   ]
+  },
+  {
+   "name": "Dev wMShared",
+   "path": "/wMShared",
+   "landscapes": [
+    "Dev"
+   ]
+  },
+  {
+   "name": "Test wMNfs",
+   "path": "/wMNfs",
+   "landscapes": [
+    "Test"
+   ]
+  },
+  {
+   "name": "Test wMShared",
+   "path": "/wMShared",
+   "landscapes": [
+    "Test"
+   ]
+  },
+  {
+   "name": "PROD wMNfs",
+   "path": "/wMNfs",
+   "landscapes": [
+    "PROD"
+   ]
+  },
+  {
+   "name": "PROD wMShared",
+   "path": "/wMShared",
+   "landscapes": [
+    "PROD"
+   ]
+  },
+  {
+   "name": "CN1 wMNfs",
+   "path": "/wMNfs",
+   "landscapes": [
+    "CN1"
+   ]
+  },
+  {
+   "name": "CN1 wMShared",
+   "path": "/wMShared",
+   "landscapes": [
+    "CN1"
+   ]
+  },
+  {
+   "name": "PSS wMNfs",
+   "path": "/wMNfs",
+   "landscapes": [
+    "PSS"
+   ]
+  },
+  {
+   "name": "PSS wMShared",
+   "path": "/wMShared",
+   "landscapes": [
+    "PSS"
+   ]
+  },
+  {
+   "name": "DR wMNfs",
+   "path": "/wMNfs",
+   "landscapes": [
+    "DR"
+   ]
+  },
+  {
+   "name": "DR wMShared",
+   "path": "/wMShared",
+   "landscapes": [
+    "DR"
+   ]
+  }
+ ]
+}
